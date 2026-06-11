@@ -241,3 +241,57 @@
 .btn-return:hover {
   background-color: #d35400;
 }
+/* Category Grid */
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 20px;
+  margin-top: 24px;
+}
+
+.category-card {
+  background: white;
+  border-radius: 12px;
+  padding: 24px 16px;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  transition: transform 0.2s, box-shadow 0.2s;
+  border: 2px solid transparent;
+}
+
+.category-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+  border-color: #1F5C99;
+}
+
+.category-icon {
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+}
+
+.category-name {
+  font-weight: 600;
+  font-size: 1rem;
+  color: #1a1a1a;
+  margin-bottom: 8px;
+}
+
+.category-stats {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.cat-available {
+  color: #2e7d32;
+  font-weight: 600;
+}
+
+.cat-unavailable {
+  color: #c62828;
+  font-weight: 600;
+}

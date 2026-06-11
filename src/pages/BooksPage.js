@@ -10,6 +10,7 @@ function BooksPage() {
   const [books, setBooks] = useState([]);
   const [authors, setAuthors] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [editingBook, setEditingBook] = useState(null);
   const [searchTitle, setSearchTitle] = useState('');
@@ -20,9 +21,9 @@ function BooksPage() {
 
   useEffect(() => {
     fetchBooks();
+    fetchCategories();
     if (isAdmin) {
       fetchAuthors();
-      fetchCategories();
     }
   }, []);
 
@@ -58,9 +59,11 @@ function BooksPage() {
     try {
       if (searchTitle.trim() === '') {
         fetchBooks();
+        setSelectedCategory(null);
       } else {
         const response = await searchBooks(searchTitle);
         setBooks(response.data);
+        setSelectedCategory('search');
       }
     } catch (error) {
       console.error('Error searching:', error);
@@ -126,15 +129,39 @@ function BooksPage() {
     setShowForm(false);
   };
 
+  // Books filtered by selected category
+  const filteredBooks = selectedCategory && selectedCategory !== 'search'
+    ? books.filter(b => b.categoryName === selectedCategory.name)
+    : books;
+
+  // Category icons
+  const categoryIcons = {
+    'Fiction': '📖', 'Science': '🔬', 'History': '🏛️', 'Technology': '💻',
+    'Biography': '👤', 'Self Help': '🌱', 'Philosophy': '🧠', 'Psychology': '🧩',
+    'Business': '💼', 'Science Fiction': '🚀'
+  };
+
   return (
     <div className="page">
       <div className="page-header">
-        <h2>Books</h2>
-        {isAdmin && (
-          <button className="btn-primary" onClick={() => setShowForm(!showForm)}>
-            {showForm ? 'Cancel' : '+ Add Book'}
-          </button>
-        )}
+        <h2>
+          {selectedCategory && selectedCategory !== 'search'
+            ? `${categoryIcons[selectedCategory.name] || '📚'} ${selectedCategory.name}`
+            : selectedCategory === 'search' ? '🔍 Search Results'
+            : '📚 Books'}
+        </h2>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          {selectedCategory && (
+            <button className="btn-secondary" onClick={() => { setSelectedCategory(null); setSearchTitle(''); fetchBooks(); }}>
+              ← Back to Categories
+            </button>
+          )}
+          {isAdmin && (
+            <button className="btn-primary" onClick={() => setShowForm(!showForm)}>
+              {showForm ? 'Cancel' : '+ Add Book'}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Search bar */}
@@ -147,7 +174,7 @@ function BooksPage() {
             onChange={(e) => setSearchTitle(e.target.value)}
           />
           <button type="submit" className="btn-primary">Search</button>
-          <button type="button" className="btn-secondary" onClick={() => { setSearchTitle(''); fetchBooks(); }}>
+          <button type="button" className="btn-secondary" onClick={() => { setSearchTitle(''); setSelectedCategory(null); fetchBooks(); }}>
             Clear
           </button>
         </form>
@@ -206,49 +233,83 @@ function BooksPage() {
         </div>
       )}
 
-      {/* Books table */}
-      <div className="table-card">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Title</th>
-              <th>Author</th>
-              <th>Category</th>
-              <th>Year</th>
-              <th>Available</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {books.map(book => (
-              <tr key={book.id}>
-                <td>{book.id}</td>
-                <td>{book.title}</td>
-                <td>{book.authorName}</td>
-                <td>{book.categoryName}</td>
-                <td>{book.publishedYear}</td>
-                <td>
-                  <span className={book.availableCopies > 0 ? 'badge-available' : 'badge-unavailable'}>
-                    {book.availableCopies > 0 ? `${book.availableCopies} available` : 'Not available'}
+      {/* CATEGORY CARDS — shown when no category selected */}
+      {!selectedCategory && (
+        <div className="category-grid">
+          {categories.map(category => {
+            const bookCount = books.filter(b => b.categoryName === category.name).length;
+            const availableCount = books.filter(b => b.categoryName === category.name && b.availableCopies > 0).length;
+            return (
+              <div
+                key={category.id}
+                className="category-card"
+                onClick={() => setSelectedCategory(category)}
+              >
+                <div className="category-icon">{categoryIcons[category.name] || '📚'}</div>
+                <div className="category-name">{category.name}</div>
+                <div className="category-stats">
+                  <span>{bookCount} books</span>
+                  <span className={availableCount > 0 ? 'cat-available' : 'cat-unavailable'}>
+                    {availableCount} available
                   </span>
-                </td>
-                <td>
-                  {isAdmin && (
-                    <>
-                      <button className="btn-edit" onClick={() => handleEdit(book)}>Edit</button>
-                      <button className="btn-delete" onClick={() => handleDelete(book.id)}>Delete</button>
-                    </>
-                  )}
-                  {!isAdmin && book.availableCopies > 0 && (
-                    <button className="btn-borrow" onClick={() => handleBorrow(book.id)}>Borrow</button>
-                  )}
-                </td>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* BOOKS TABLE — shown after category selected or search */}
+      {selectedCategory && (
+        <div className="table-card">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Author</th>
+                <th>Year</th>
+                <th>Available</th>
+                <th>Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {filteredBooks.length === 0 ? (
+                <tr>
+                  <td colSpan="6" style={{ textAlign: 'center', color: '#999', padding: '24px' }}>
+                    No books found
+                  </td>
+                </tr>
+              ) : (
+                filteredBooks.map(book => (
+                  <tr key={book.id}>
+                    <td>{book.id}</td>
+                    <td>{book.title}</td>
+                    <td>{book.authorName}</td>
+                    <td>{book.publishedYear}</td>
+                    <td>
+                      <span className={book.availableCopies > 0 ? 'badge-available' : 'badge-unavailable'}>
+                        {book.availableCopies > 0 ? `${book.availableCopies} available` : 'Not available'}
+                      </span>
+                    </td>
+                    <td>
+                      {isAdmin && (
+                        <>
+                          <button className="btn-edit" onClick={() => handleEdit(book)}>Edit</button>
+                          <button className="btn-delete" onClick={() => handleDelete(book.id)}>Delete</button>
+                        </>
+                      )}
+                      {!isAdmin && book.availableCopies > 0 && (
+                        <button className="btn-borrow" onClick={() => handleBorrow(book.id)}>Borrow</button>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
