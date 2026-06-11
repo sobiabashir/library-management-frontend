@@ -87,6 +87,26 @@
   font-size: 18px;
   color: #7f8c8d;
 }
+.clickable {
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.clickable:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.clickable.active {
+  border: 2px solid #333;
+}
+
+.stat-hint {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin-top: 6px;
+  display: block;
+}
 
 /* Responsive */
 @media (max-width: 1024px) {
